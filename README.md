@@ -110,3 +110,12 @@ Python can lose a substantial amount of performance using RDDs. Running Python R
 
 For the vast majority of use cases, DataFrames will be more efficient, more stable and more expressive than RDDs. The most likely reason for why you'll want to use RDDs is because you need fine-grained control over the physical distribution of data (custom partitioning of data).
 
+With RDDs, you have control over how data is exactly physically distributed across the cluster. Some of these methods are basically the same from what we have in the Structured API but the key addition is the ability to specify a partitioning function.
+
+__Coalesce__ effectively collapses partitions on the same worker in order to avoid a shuffle of the data when repartitioning. 
+
+__Repartition__ operation allows you to repartition your data up or down but performs a shuffle across nodes in the process. Increasing the number of partitions can increase the level of parallelism when operating in map and filter-type operations.
+
+# Custom Partitioning
+
+Spark has two built-in Partitioners that you can leverage off in the RDD API - a Hash Partitioner for discrete values and a Range Partitioner. These two work for discrete values and continuous values, respectively. 
