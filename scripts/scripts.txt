@@ -1,0 +1,1 @@
+flightData2015 = spark.read.option("inferSchema","true").option("header","true").csv("C:/Users/Semantix/Spark-The-Definitive-Guide/data/flight-data/csv/2015-summary.csv")
