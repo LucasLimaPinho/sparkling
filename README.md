@@ -64,3 +64,49 @@ If the function is written in Python, Spark starts a Python process on the worke
 
 THis is costly for two reasons: it is an expensive computation, but also, after the data enters Python, Spark cannot manage the memory of the worker. This means that you could potentially cause a worker to failt if it becomes resource constrained (because both the JVM and Python are competing for memory on the same machine). We recommend that you write your UDFs in Scala or Java - the small amount of time it should take you to write the function in Scala will always yeld significant speed ups, and on top of that, you can still use the function from Python!
 
+# Resilient Distributed Datasets (RDD)
+
+There are times when higher-level manipulation with Structured APIs will not meet the business or engineering problems that you are trying to solve. For those cases, you might need Spark's lower-level APIs, specifically the Resilient Distributed Dataset (RDD), the SparkContext and distributed shared variables like accumulators and broadcast variables. 
+
+You should generally use the lower-level APIs in three situations:
+
+* You need some functionality that you cannot find in the higher-level APIs; for example, if you need very tight control over physical data placement across the cluster;
+
+* You need to maintain some legacy codebase written using RDDs;
+
+* You need to do some custom shared variable manipulation.
+
+All Spark workloads compile down to these fundamental primitives (lower level APIs - RDD and shared variables). When you're calling a DataFrame transformation, it actually just becomes a set of RDD transformations. These tools give you more fine-grained control at the expense of safeguarding you from shooting yourself in the foot!
+
+A SparkContext is the entry point for low-level API functionality. You access it through the SparkSession, which is the tool you use to performe computation across a Spark cluster. 
+
+### About RDDs
+
+Every Spark code you write compiles down to RDD. The Spark UI also describes job execution in terms of RDDs. 
+
+An RDD represents an immutable, partitioned collection of records that can be operated on in parallel. Unlike DataFrames though, where each record is a structured row containining fields with a known schema, in RDDs the records are just Java, Scala or Python objects of the programmer's choosing. 
+
+RDDs give you complete control because every record in an RDD is a just a Java or Python object. You can store anything you want in these objects, in any format you want. 
+
+If you look through Spark's API documentation, you will notice that there are lots of subclasses of RDD. For the most part, these are internal representations that the DataFrame API uses to create optimized physical execution plans. As a user, however, you will likely only be creating two types of RDDs: the "generic" RDD type or a key-value RDD that provides additional functions, such as aggregating by key.
+
+Internally, each RDD is characterized by five main properties:
+
+* A list of partitions
+
+* A function for computing each split
+
+* A list of dependencies on other RDDs
+
+* Optionally, a Partitioner for key-value RDDs (e.g, to say that the RDD is hash-partitioned)
+
+* Optionally, a list of preferred locations on which to compute each split
+
+The Partitioner is problably one of the core reasons why you might want to use RDDs in your code. Specifying your own custom Partitioner can give you significant performance and stability improvements if you use correctly. 
+
+There is no concept of "rows" in RDDs; individual records are just raw Scala/Java/Python objects, and you manipulate those manually instead of tapping into the repository of funcions that you have on Structured APIs.
+
+Python can lose a substantial amount of performance using RDDs. Running Python RDDs equates to running Python user-defined functions (UDF) row by row. We serialize the data to the Python process, operate on it in Python, and then serialize it back to the Java Virtual Machine (JVM). THis causes a high overhead for Python RDD manipulations. Even though many people ran production code with them in the past, we recommend building on the Structured APIs in Python and only dropping down to RDDs if is absolutely necessary.
+
+For the vast majority of use cases, DataFrames will be more efficient, more stable and more expressive than RDDs. The most likely reason for why you'll want to use RDDs is because you need fine-grained control over the physical distribution of data (custom partitioning of data).
+
