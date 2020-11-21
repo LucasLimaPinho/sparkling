@@ -150,3 +150,27 @@ Although streaming and batch processing sound different, in practice, they often
 
 Spark batch jobs are often used for Extract, Transform * Load (ETL) workloads that turn raw data into a structured format like Parquet to enable efficient queries. Using Structured Streaming, these jobs can incorporate new data whithin seconds, enabling users to query it faster downstream. 
 
+#### Continuous versus Micro-Batch Execution
+
+In continuous processing-based systems, each node in the system is continually listening to messages from other nodes and outputting new updates to its child nodes. For example, suppose that your application implements a map-reduce computation over several input streams. In a continuous processing system, each of the nodes implementing map would read records one by one from an input source, compute its function on them, and send them to the appropriate reducer. The reducer would then update its state whenever it gets a new record. Continuous processing systems generally have lower maximum throughput, because they incur a significant amount of overhead per-record.
+
+In contrast, micro-batch systems wait to accumulate small batches of input data then process each batch in parallel using a distributed collection of tasks, similar to the execution of a batch job in Spark. Micro-batch systems can ofter achieve high throughput per node because they leverage the same optimizations as batch systems and do not incur any extra per-record overhead.
+
+In practice, the streaming applications that are large-scale enough to need to distribute their computation tend to prioritize throughput, so Spark has traditionally implemented micro-batch processing. In Structured Streaming, however, there is an active development effort to also support a continuous processing mode beneath the same API.
+
+The DStream API in Spark Streaming is purely micro-batch oriented (Structured Streaming API is only available in a stable way in Apache Spark 2.2). It has a declarative (functional-based) API but no support for event time. The Structured Streaming API adds higher-level optimizations, event time and support for continuous processing.
+
+#### The DStream API
+
+It is based purely on Java/Python objects and functions, as opposed to the richer concept of structured tables in DataFrames and DataSets. The API is purely based on processing time - to handle event-time operations, applications need to implement them on their own. Finnaly, DStreams can only operate in a microbatch fashion, and exposes the duration of micro-batches in some parts of its API, making it difficult to support alternative execution modes.
+
+#### Structured Streaming
+
+Structured Streaming is a higher-level streaming API built from the ground up on Spark's Structured API. It is available in all the environments where structured processing runs, including Scala, Java, Python, R and SQL. Like DStreams, it is a declarative API based on high-level operations, but by building on the structured data model introduced in the previous part of the book. Structured Streaming can perform more types of optimizations automatically. However, unlike DStreams, Structured Streaming has native support for event time data.
+
+Structured Streaming is built on the Spark SQL Engine. Rather than introducing a separate API, Structured Streaming uses the existing structured API in Spark (DataFrames, DataSets and SQL), meaning that all operations you are familiar with there are supported. Users express a streaming computation in the same way they'd write a batch compitation on static data. 
+
+The main idea behind Structured Streaming is to treat a stream of data as a tale to which data is continuously appended. A cornerstone of the API is that you should not have to change your query's code when doing batch or stream processing - you should have to specify only whether to run that query in a batch or streaming fashion. 
+
+
+
