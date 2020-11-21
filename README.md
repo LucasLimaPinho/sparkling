@@ -142,5 +142,11 @@ Accumulators provide a mutable variable that Spark cluster can safely update on 
 
 For accumulator updates performed inside actions only, Spark guarantees that each taks's update to the accumulator will be applied only once, meaning that restarted tasks will not update the value. In transformations, you should be aware that each task's update can be applied more than once if tasks or job stages are reexecuted.
 
+# Spark Streaming
 
+Much like the Resilient Distributed Datasets (RDD) API, however, the DStreams API is based on relatively low-level operations on Java/Python objects that limit opportunities for higher-level optimization. Thus, in 2016, the Spark Project added **Structured Streaming**, a new Streaming API built directly on DataFrames that supports both rich optimizations and significantly simpler integration with other DataFrame and DataSet code. The Structured Streaming API was marked as stable in Apache Spark 2.2, and has also seen swift adoption throughout the Spark community.
+
+Although streaming and batch processing sound different, in practice, they often need to work together. For example, streaming applications often need to join input data against a dataset written periodically by a batch job and the output of streaming jobs is often files or tables that are queried in batch jobs.
+
+Spark batch jobs are often used for Extract, Transform * Load (ETL) workloads that turn raw data into a structured format like Parquet to enable efficient queries. Using Structured Streaming, these jobs can incorporate new data whithin seconds, enabling users to query it faster downstream. 
 
