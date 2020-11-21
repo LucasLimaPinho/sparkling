@@ -116,6 +116,31 @@ __Coalesce__ effectively collapses partitions on the same worker in order to avo
 
 __Repartition__ operation allows you to repartition your data up or down but performs a shuffle across nodes in the process. Increasing the number of partitions can increase the level of parallelism when operating in map and filter-type operations.
 
-# Custom Partitioning
+### Custom Partitioning ( the main reason to use RDD lower-level API )
 
 Spark has two built-in Partitioners that you can leverage off in the RDD API - a Hash Partitioner for discrete values and a Range Partitioner. These two work for discrete values and continuous values, respectively. 
+
+# Distributed Shared Variables - Lower Level API
+
+1. Broadcast Variables: let you save a large value on all the worker nodes and reuse it across many Spark actions without re-sending it to the cluster.
+
+2. Accumulators: let you add together data from all the tasks into a shared result.
+
+These are variables you can use in your user-defined functions that have special properties when running on a cluster. 
+
+#### Broadcast Variables
+
+Broadcast variables are a way you can share an immutable value efficiently around the cluster without encapsulating that variable in a function closure. When you use a variable in a closure, it must be deserialized on the worker nodes many times (one per task). Moreover, if tou use the same variable multiple Spark actions and jobs, it will be re-sent to the workers with every job instead of once.
+
+Broadcast variables are shared, immutable variables that are cached on every machine in the cluster instead of serialized with every single task. The canonical use is to pass around a large LOOKUP table that fits in memory on the executors and use that in a function.
+
+#### Accumulators
+
+Accumulators are a way of updating a value inside of a variety of transformatons and propagating that value to the driver node in an efficient and fault-tolerant way.
+
+Accumulators provide a mutable variable that Spark cluster can safely update on a per-row basis. You can use these for debugging purposes (say to track the values of a certain variable per partition in order to intelligently use it over time) or to create a low-level aggregation. 
+
+For accumulator updates performed inside actions only, Spark guarantees that each taks's update to the accumulator will be applied only once, meaning that restarted tasks will not update the value. In transformations, you should be aware that each task's update can be applied more than once if tasks or job stages are reexecuted.
+
+
+
